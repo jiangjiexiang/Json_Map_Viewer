@@ -47,31 +47,42 @@ class MapRenderer {
     this.draw();
   }
 
-  /**
-   * 计算地图数据的实际边界（minX, maxX, minY, maxY）。
-   * 遍历所有 BoundaryPoints 来确定。
-   */
-  calculateBounds() {
-    this.minX = Infinity;
-    this.maxX = -Infinity;
-    this.minY = Infinity;
-    this.maxY = -Infinity;
+/**
+ * 计算地图数据的实际边界（minX, maxX, minY, maxY）。
+ * 遍历所有 BoundaryPoints 来确定。
+ */
+calculateBounds() {
+  this.minX = Infinity;
+  this.maxX = -Infinity;
+  this.minY = Infinity;
+  this.maxY = -Infinity;
 
-    if (!this.data || !this.data.roadLine) {
-      return;
-    }
-
-    this.data.roadLine.forEach(road => {
-      road.BoundaryPoints.forEach(point => {
-        const x = point.x - this.offset.x;
-        const y = point.y - this.offset.y;
-        this.minX = Math.min(this.minX, x);
-        this.maxX = Math.max(this.maxX, x);
-        this.minY = Math.min(this.minY, y);
-        this.maxY = Math.max(this.maxY, y);
-      });
-    });
+  if (!this.data || !this.data.roadLine) {
+    return;
   }
+
+  // 定义一个合理的坐标值上限，用于过滤掉异常数据
+  const REASONABLE_LIMIT = 1e12; // 这是一个非常大的数字，正常坐标远小于此
+
+  this.data.roadLine.forEach(road => {
+    road.BoundaryPoints.forEach(point => {
+      const x = point.x - this.offset.x;
+      const y = point.y - this.offset.y;
+
+      // --- 核心修复：如果坐标的绝对值太大，就跳过这个点 ---
+      if (Math.abs(x) > REASONABLE_LIMIT || Math.abs(y) > REASONABLE_LIMIT) {
+        // 这是一个异常数据点，我们直接忽略它
+        return; // `return` 在 forEach 中相当于 `continue`
+      }
+
+      // 只用合理的点来计算边界
+      this.minX = Math.min(this.minX, x);
+      this.maxX = Math.max(this.maxX, x);
+      this.minY = Math.min(this.minY, y);
+      this.maxY = Math.max(this.maxY, y);
+    });
+  });
+}
 
   /**
    * 将地图视图调整到适合 Canvas 的大小，显示所有地图内容。
@@ -96,7 +107,15 @@ class MapRenderer {
 
     this.translateX = (canvasWidth - scaledMapWidth) / 2 - this.minX * this.scale;
     this.translateY = (canvasHeight - scaledMapHeight) / 2 - this.minY * this.scale;
-
+    // --- 开始调试代码 ---
+    console.log('--- Map Bounds Debug ---');
+    console.log('Map Data Bounds (minX, maxX):', this.minX, this.maxX);
+    console.log('Map Data Bounds (minY, maxY):', this.minY, this.maxY);
+    console.log('Calculated Map Size (width, height):', mapWidth, mapHeight);
+    console.log('Canvas Size (width, height):', canvasWidth, canvasHeight);
+    console.log('Final Calculated Scale:', this.scale);
+    console.log('Final Calculated Translation (X, Y):', this.translateX, this.translateY);
+    // --- 结束调试代码 ---
     this.draw();
   }
 
