@@ -8,6 +8,7 @@ class MapApp {
     this.canvas = document.getElementById('mapCanvas');
     this.mapSelect = document.getElementById('mapSelect');
     this.status = document.getElementById('status');
+    this.infoPanel = document.getElementById('infoPanel'); // 信息面板
     this.renderer = new MapRenderer(this.canvas);
 
     this.init();
@@ -60,6 +61,24 @@ class MapApp {
 
     // 键盘快捷键
     this.setupKeyboardShortcuts();
+    // ▼▼▼ 添加下面的 Canvas 点击事件监听器 ▼▼▼
+    this.canvas.addEventListener('click', (e) => {
+      const rect = this.canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const info = this.renderer.selectRoadAt(mouseX, mouseY);
+
+      if (info) {
+        this.infoPanel.innerHTML = `
+          <h4>道路信息</h4>
+          <p><strong>道路ID:</strong> ${info.id}</p>
+          <p><strong>长度:</strong> ${info.length.toFixed(2)} 米</p>
+        `;
+        this.infoPanel.style.display = 'block';
+      } else {
+        this.infoPanel.style.display = 'none';
+      }
+    });
   }
 
   /**

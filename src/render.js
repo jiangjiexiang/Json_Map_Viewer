@@ -21,6 +21,7 @@ class MapRenderer {
     this.lastMouseX = 0;
     this.lastMouseY = 0;
     this.showGrid = false; // 是否显示网格
+    this.selectedRoad = null; // ◀◀◀ 添加这一行，用于存储选中的道路
 
     this.setupCanvas();
   }
@@ -158,23 +159,26 @@ calculateBounds() {
   }
 
   /**
-   * 绘制单条道路线。
-   * @param {Object} road - 道路数据对象。
-   */
-  drawRoadLine(road, ctx) {
-    if (!road.BoundaryPoints || road.BoundaryPoints.length < 2) {
-      return;
-    }
+ * 绘制单条道路线。
+ * @param {Object} road - 道路数据对象。
+ * @param {CanvasRenderingContext2D} ctx - Canvas 2D 上下文。
+ */
+drawRoadLine(road, ctx) {
+  if (!road.BoundaryPoints || road.BoundaryPoints.length < 2) {
+    return;
+  }
 
-    const firstPoint = road.BoundaryPoints[0];
-    // 注释掉这个检查，让所有类型的线都能渲染
-    // if (firstPoint.LineType === 'none') {
-    //   return; // 不渲染
+  const firstPoint = road.BoundaryPoints[0];
 
-    ctx.beginPath();
+  ctx.beginPath();
+  
+  // 根据是否选中来设置样式
+  if (this.selectedRoad && this.selectedRoad.RoadId === road.RoadId) {
+    ctx.lineWidth = 4; // 选中时更粗
+    ctx.strokeStyle = 'lime'; // 选中时亮绿色
+    ctx.setLineDash([]); // 选中时实线
+  } else {
     ctx.lineWidth = 2; // 默认线宽
-
-    // 根据 LineColor 设置颜色
     switch (firstPoint.LineColor) {
       case 'white':
         ctx.strokeStyle = 'white';
@@ -185,44 +189,42 @@ calculateBounds() {
       default:
         ctx.strokeStyle = 'white'; // 默认白色
     }
-
-    // 根据 LineType 设置虚线
     if (firstPoint.LineType === 'broken') {
       ctx.setLineDash([5, 5]); // 虚线
     } else {
       ctx.setLineDash([]); // 实线
     }
-
-    let start = this.worldToCanvas(firstPoint.x, firstPoint.y);
-    ctx.moveTo(start.x, start.y);
-
-    for (let i = 1; i < road.BoundaryPoints.length; i++) {
-      const point = road.BoundaryPoints[i];
-      let end = this.worldToCanvas(point.x, point.y);
-      ctx.lineTo(end.x, end.y);
-    }
-    ctx.stroke();
-
-    // 绘制箭头表示方向 (可选增强功能)
-    if (road.BoundaryPoints.length > 1) {
-      const p1 = this.worldToCanvas(road.BoundaryPoints[0].x, road.BoundaryPoints[0].y);
-      const p2 = this.worldToCanvas(road.BoundaryPoints[1].x, road.BoundaryPoints[1].y);
-      this.drawArrow(p1.x, p1.y, p2.x, p2.y, ctx.strokeStyle);
-    }
-
-    // 在中点标注 RoadId (可选增强功能)
-    if (road.RoadId) {
-      const midIndex = Math.floor(road.BoundaryPoints.length / 2);
-      const midPoint = road.BoundaryPoints[midIndex];
-      const canvasMid = this.worldToCanvas(midPoint.x, midPoint.y);
-      ctx.fillStyle = 'cyan';
-      ctx.font = '10px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(road.RoadId, canvasMid.x, canvasMid.y - 10); // 稍微向上偏移
-    }
   }
 
+  let start = this.worldToCanvas(firstPoint.x, firstPoint.y);
+  ctx.moveTo(start.x, start.y);
+
+  for (let i = 1; i < road.BoundaryPoints.length; i++) {
+    const point = road.BoundaryPoints[i];
+    let end = this.worldToCanvas(point.x, point.y);
+    ctx.lineTo(end.x, end.y);
+  }
+  ctx.stroke();
+
+  // 绘制箭头
+  if (road.BoundaryPoints.length > 1) {
+    const p1 = this.worldToCanvas(road.BoundaryPoints[0].x, road.BoundaryPoints[0].y);
+    const p2 = this.worldToCanvas(road.BoundaryPoints[1].x, road.BoundaryPoints[1].y);
+    this.drawArrow(p1.x, p1.y, p2.x, p2.y, ctx.strokeStyle);
+  }
+
+  // 标注 RoadId
+  if (road.RoadId) {
+    const midIndex = Math.floor(road.BoundaryPoints.length / 2);
+    const midPoint = road.BoundaryPoints[midIndex];
+    const canvasMid = this.worldToCanvas(midPoint.x, midPoint.y);
+    ctx.fillStyle = 'cyan';
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(road.RoadId, canvasMid.x, canvasMid.y - 10);
+  }
+}
   /**
    * 绘制箭头。
    * @param {number} x1 - 起点 X。
@@ -318,5 +320,88 @@ calculateBounds() {
   toggleGrid() {
     this.showGrid = !this.showGrid;
     this.draw();
+  }
+  // render.js -> 在 MapRenderer 类的末尾添加以下新方法
+
+/**
+ * 将 Canvas 屏幕坐标转换为已处理偏移的世界坐标。
+ */
+canvasToWorld(canvasX, canvasY) {
+  const x = (canvasX - this.translateX) / this.scale;
+  const y = (this.canvas.clientHeight - canvasY - this.translateY) / this.scale;
+  return { x, y };
+}
+
+/**
+ * 计算一条道路的总长度。
+ * @param {Object} road - 道路数据对象。
+ * @returns {number} - 道路的长度（单位：米）。
+ */
+calculateRoadLength(road) {
+  let totalLength = 0;
+  for (let i = 0; i < road.BoundaryPoints.length - 1; i++) {
+    const p1 = road.BoundaryPoints[i];
+    const p2 = road.BoundaryPoints[i + 1];
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    totalLength += Math.sqrt(dx * dx + dy * dy);
+  }
+  return totalLength;
+}
+
+  /**
+   * 根据 Canvas 上的点击坐标，查找并选中最近的道路。
+   */
+  selectRoadAt(canvasX, canvasY) {
+    const clickWorldPos = this.canvasToWorld(canvasX, canvasY);
+    const clickThreshold = 5 / this.scale; // 拾取范围（5个像素），需要根据缩放调整
+
+    let closestRoad = null;
+    let minDistance = Infinity;
+
+    if (!this.data || !this.data.roadLine) return null;
+
+    this.data.roadLine.forEach(road => {
+      for (let i = 0; i < road.BoundaryPoints.length - 1; i++) {
+        // --- 核心修复就在这里！---
+        // 我们必须将原始道路点，也转换为减去 offset 后的坐标系
+        const p1_raw = road.BoundaryPoints[i];
+        const p2_raw = road.BoundaryPoints[i + 1];
+        const p1 = { x: p1_raw.x - this.offset.x, y: p1_raw.y - this.offset.y };
+        const p2 = { x: p2_raw.x - this.offset.x, y: p2_raw.y - this.offset.y };
+
+        const dx = p2.x - p1.x;
+        const dy = p2.y - p1.y;
+        const lenSq = dx * dx + dy * dy;
+
+        if (lenSq === 0) continue;
+
+        const t = ((clickWorldPos.x - p1.x) * dx + (clickWorldPos.y - p1.y) * dy) / lenSq;
+        const tClamped = Math.max(0, Math.min(1, t));
+
+        const closestPointX = p1.x + tClamped * dx;
+        const closestPointY = p1.y + tClamped * dy;
+
+        const distSq = Math.pow(clickWorldPos.x - closestPointX, 2) + Math.pow(clickWorldPos.y - closestPointY, 2);
+
+        if (distSq < minDistance) {
+          minDistance = distSq;
+          closestRoad = road;
+        }
+      }
+    });
+
+    if (minDistance < clickThreshold * clickThreshold) {
+      this.selectedRoad = closestRoad;
+      this.draw(); // 重绘以高亮
+      return {
+        id: this.selectedRoad.RoadId || '未命名',
+        length: this.calculateRoadLength(this.selectedRoad)
+      };
+    } else {
+      this.selectedRoad = null; // 点击空白区域，取消选中
+      this.draw(); // 重绘以取消高亮
+      return null;
+    }
   }
 }
