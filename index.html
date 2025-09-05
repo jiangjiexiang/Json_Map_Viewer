@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>JSON Map Viewer</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <div class="toolbar">
+    <label for="mapSelect">选择地图：</label>
+    <select id="mapSelect" aria-label="选择地图"></select>
+    <span id="status" class="status" aria-live="polite">就绪</span>
+  </div>
+
+  <canvas id="mapCanvas"></canvas>
+
+  <div class="controls" role="group" aria-label="视图控制">
+    <button id="zoomIn" title="放大">+</button>
+    <button id="zoomOut" title="缩小">-</button>
+    <button id="resetView" title="重置视图">重置</button>
+    <button id="toggleGrid" title="切换网格">网格</button>
+  </div>
+
+  <script src="src/render.js"></script>
+  <script src="src/app.js"></script>
+</body>
+</html>

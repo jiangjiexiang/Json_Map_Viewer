@@ -1,0 +1,19 @@
+{
+  "version": "1.0",
+  "description": "地图文件索引",
+  "maps": [
+    {
+      "name": "AI Town Reconstructed V0103",
+      "file": "AITownReconstructed_V0103_200518.xodr.json",
+      "description": "AI 城镇重建地图，版本 0103",
+      "date": "2020-05-18",
+      "type": "xodr"
+    },
+    {
+      "name": "GESM2 地图",
+      "file": "GESM2.xodr.json",
+      "description": "GESM2 道路网络地图",
+      "type": "xodr"
+    }
+  ]
+}

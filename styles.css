@@ -1,0 +1,148 @@
+/* 全局与主题 */
+* { box-sizing: border-box; }
+
+:root {
+  color-scheme: light dark;
+  --bg: #ffffff;
+  --fg: #1f2328;
+  --muted: #667085;
+  --border: #e5e7eb;
+  --toolbar-bg: #f8fafc;
+  --btn-bg: #ffffff;
+  --btn-fg: #111827;
+  --btn-border: #e5e7eb;
+  --btn-hover: #f3f4f6;
+  --btn-active: #e5e7eb;
+  --shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b0f14;
+    --fg: #e5e7eb;
+    --muted: #9aa4b2;
+    --border: #1f2937;
+    --toolbar-bg: #0f172a;
+    --btn-bg: #111827;
+    --btn-fg: #e5e7eb;
+    --btn-border: #1f2937;
+    --btn-hover: #0b1220;
+    --btn-active: #0a101b;
+    --shadow: 0 6px 20px rgba(0,0,0,0.35);
+  }
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+/* 顶部工具栏 */
+.toolbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  background: var(--toolbar-bg);
+  border-bottom: 1px solid var(--border);
+  z-index: 10;
+}
+
+.toolbar label {
+  font-size: 14px;
+}
+
+#mapSelect {
+  min-width: 260px;
+  max-width: 60vw;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--btn-border);
+  border-radius: 8px;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  box-shadow: var(--shadow);
+  outline: none;
+}
+
+.status {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* 画布覆盖剩余区域（JS 会设置实际像素尺寸以适配 dpr） */
+#mapCanvas {
+  position: fixed;
+  top: 52px; /* 紧贴工具栏 */
+  left: 0; right: 0; bottom: 0;
+  width: 100vw;
+  height: calc(100vh - 52px);
+  display: block;
+  background:
+    radial-gradient(circle at 25% 25%, rgba(127,127,127,0.08) 0 1px, transparent 1px) 0 0/16px 16px,
+    var(--bg);
+}
+
+/* 右下角控制按钮 */
+.controls {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 20;
+}
+
+.controls button {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--btn-border);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.controls button:hover {
+  background: var(--btn-hover);
+}
+
+.controls button:active {
+  background: var(--btn-active);
+  transform: translateY(1px);
+}
+
+.controls button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* 小屏优化 */
+@media (max-width: 560px) {
+  .toolbar {
+    gap: 8px;
+    padding: 0 10px;
+  }
+  #mapSelect {
+    min-width: 180px;
+    max-width: 54vw;
+  }
+  .controls button {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    font-size: 16px;
+  }
+}
